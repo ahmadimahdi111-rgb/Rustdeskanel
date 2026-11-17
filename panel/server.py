@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-VERSION='3.0.0'
+VERSION='1.0.0'
 HOST=os.getenv('PANEL_BIND','172.16.2.99'); PORT=int(os.getenv('PANEL_PORT','8765'))
 DATA=Path(os.getenv('PANEL_DATA','/var/lib/rustdeskpanel')); DB_PATH=DATA/'panel.sqlite3'
 STATUS=Path(os.getenv('PANEL_STATUS_FILE','/var/lib/mizyar-panel/status.json'))
@@ -53,7 +53,7 @@ def init_db():
         c.execute('INSERT OR IGNORE INTO settings VALUES(?,?)',('logo',''))
 
 class Handler(BaseHTTPRequestHandler):
-    server_version='RustDeskPanel/3'
+    server_version='RustDeskPanel/1'
     def log_message(self,*a): pass
     def send_json(self,obj,status=200,headers=None):
         b=json.dumps(obj,ensure_ascii=False).encode(); self.send_response(status); self.send_header('Content-Type','application/json; charset=utf-8'); self.send_header('Cache-Control','no-store'); self.send_header('Content-Length',str(len(b)))
