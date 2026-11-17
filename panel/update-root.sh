@@ -20,5 +20,11 @@ install -o root -g rustdeskpanel -m 0640 "$SRC/server.py" "$APP/server.py"
 install -o root -g rustdeskpanel -m 0640 "$SRC/index.html" "$APP/index.html"
 install -o root -g rustdeskpanel -m 0640 "$SRC/VERSION" "$APP/VERSION"
 install -o root -g root -m 0755 "$SRC/update-root.sh" /usr/local/sbin/rustdeskpanel-update
+install -o root -g root -m 0755 "$SRC/launch-update.sh" /usr/local/sbin/rustdeskpanel-launch-update
+if [[ -f /etc/systemd/system/rustdeskpanel.service ]]; then sed -i '/^NoNewPrivileges=true$/d' /etc/systemd/system/rustdeskpanel.service; fi
+printf '%s\n' 'rustdeskpanel ALL=(root) NOPASSWD: /usr/local/sbin/rustdeskpanel-launch-update' > /etc/sudoers.d/rustdeskpanel-update
+chmod 0440 /etc/sudoers.d/rustdeskpanel-update
+visudo -cf /etc/sudoers.d/rustdeskpanel-update >/dev/null
+systemctl daemon-reload
 systemctl restart rustdeskpanel.service
 echo "به‌روزرسانی به نسخه $(cat "$APP/VERSION") انجام شد."
