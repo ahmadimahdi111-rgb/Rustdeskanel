@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-VERSION='3.1.0'
+VERSION='3.2.0'
 HOST=os.getenv('PANEL_BIND','172.16.2.99'); PORT=int(os.getenv('PANEL_PORT','8765'))
 DATA=Path(os.getenv('PANEL_DATA','/var/lib/rustdeskpanel')); DB_PATH=DATA/'panel.sqlite3'
 STATUS=Path(os.getenv('PANEL_STATUS_FILE','/var/lib/mizyar-panel/status.json'))
@@ -178,6 +178,16 @@ class Handler(BaseHTTPRequestHandler):
                 with conn() as c:c.execute('INSERT INTO users(username,password,role,created_at) VALUES(?,?,?,?)',(name,password_hash(pw),'operator',utcnow()))
             except sqlite3.IntegrityError:return self.send_json({'error':'نام کاربری تکراری است'},409)
             return self.send_json({'ok':True},201)
+        if p.startswith('/api/admin/users/') and p.endswith('/password'):
+            if not self.require(admin=True):return
+            uid=int(p.split('/')[-2]); new=str(x.get('password',''))
+            if len(new)<8:return self.send_json({'error':'رمز جدید باید حداقل ۸ نویسه باشد'},400)
+            with conn() as c:
+                target=c.execute("SELECT id,role FROM users WHERE id=?",(uid,)).fetchone()
+                if not target or target['role']=='admin':return self.send_json({'error':'تغییر رمز این کاربر از این بخش مجاز نیست'},404)
+                c.execute('UPDATE users SET password=? WHERE id=?',(password_hash(new),uid))
+                c.execute('DELETE FROM sessions WHERE user_id=?',(uid,))
+            return self.send_json({'ok':True})
         if p.startswith('/api/admin/users/') and p.endswith('/toggle'):
             if not self.require(admin=True):return
             uid=int(p.split('/')[-2])
