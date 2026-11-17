@@ -17,6 +17,7 @@ install -o root -g rustdeskpanel -m 0640 "$SRC/server.py" "$APP/server.py"
 install -o root -g rustdeskpanel -m 0640 "$SRC/index.html" "$APP/index.html"
 install -o root -g rustdeskpanel -m 0640 "$SRC/VERSION" "$APP/VERSION"
 install -o root -g root -m 0755 "$SRC/update-root.sh" /usr/local/sbin/rustdeskpanel-update
+install -o root -g root -m 0755 "$SRC/launch-update.sh" /usr/local/sbin/rustdeskpanel-launch-update
 ADMIN_PASSWORD=$(openssl rand -hex 10); DEVICE_KEY=$(openssl rand -hex 32)
 cat > "$CFG/panel.env" <<EOF
 PANEL_BIND=$SERVER_IP
@@ -46,7 +47,6 @@ WorkingDirectory=$APP
 ExecStart=/usr/bin/python3 $APP/server.py
 Restart=on-failure
 RestartSec=3
-NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
@@ -55,7 +55,7 @@ ReadWritePaths=$DATA
 [Install]
 WantedBy=multi-user.target
 EOF
-printf '%s\n' 'rustdeskpanel ALL=(root) NOPASSWD: /usr/local/sbin/rustdeskpanel-update' > /etc/sudoers.d/rustdeskpanel-update
+printf '%s\n' 'rustdeskpanel ALL=(root) NOPASSWD: /usr/local/sbin/rustdeskpanel-launch-update' > /etc/sudoers.d/rustdeskpanel-update
 chmod 0440 /etc/sudoers.d/rustdeskpanel-update
 visudo -cf /etc/sudoers.d/rustdeskpanel-update >/dev/null
 cat >/root/rustdeskpanel-login.txt <<EOF
