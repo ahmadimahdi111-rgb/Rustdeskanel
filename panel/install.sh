@@ -9,8 +9,10 @@ if ! id rustdeskpanel >/dev/null 2>&1; then useradd --system --user-group --no-c
 getent group mizyar-web >/dev/null 2>&1 || groupadd --system mizyar-web
 if id mizyar-web >/dev/null 2>&1; then usermod -aG mizyar-web rustdeskpanel; fi
 systemctl disable --now mizyar-panel.service 2>/dev/null || true
-install -d -o root -g rustdeskpanel -m 0750 "$APP" "$DATA"
-install -d -o root -g root -m 0750 "$CFG" "$DATA/backups"
+install -d -o root -g rustdeskpanel -m 0750 "$APP"
+install -d -o rustdeskpanel -g rustdeskpanel -m 0750 "$DATA" "$DATA/backups"
+install -d -o root -g rustdeskpanel -m 0750 "$CFG"
+
 install -o root -g rustdeskpanel -m 0640 "$SRC/server.py" "$APP/server.py"
 install -o root -g rustdeskpanel -m 0640 "$SRC/index.html" "$APP/index.html"
 install -o root -g rustdeskpanel -m 0640 "$SRC/VERSION" "$APP/VERSION"
