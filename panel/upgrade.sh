@@ -4,7 +4,7 @@ set -euo pipefail
 SRC="$(cd "$(dirname "$0")" && pwd)"
 APP=/opt/rustdeskpanel; DATA=/var/lib/rustdeskpanel; CFG=/etc/rustdeskpanel
 id rustdeskpanel >/dev/null 2>&1 || { echo 'سرویس نصب نیست؛ ابتدا install.sh را اجرا کن.'; exit 1; }
-test -f "$SRC/server.py" && test -f "$SRC/index.html" && test -f "$SRC/VERSION"
+test -f "$SRC/server.py" && test -f "$SRC/index.html" && test -f "$SRC/VERSION" && test -f "$SRC/launch-update.sh"
 install -d -o root -g rustdeskpanel -m 0750 "$APP"
 install -d -o rustdeskpanel -g rustdeskpanel -m 0750 "$DATA" "$DATA/backups"
 install -d -o root -g rustdeskpanel -m 0750 "$CFG"
@@ -12,9 +12,14 @@ install -o root -g rustdeskpanel -m 0640 "$SRC/server.py" "$APP/server.py"
 install -o root -g rustdeskpanel -m 0640 "$SRC/index.html" "$APP/index.html"
 install -o root -g rustdeskpanel -m 0640 "$SRC/VERSION" "$APP/VERSION"
 install -o root -g root -m 0755 "$SRC/update-root.sh" /usr/local/sbin/rustdeskpanel-update
-chown rustdeskpanel:rustdeskpanel "$DATA"
-chmod 0750 "$DATA"
+install -o root -g root -m 0755 "$SRC/launch-update.sh" /usr/local/sbin/rustdeskpanel-launch-update
+chown rustdeskpanel:rustdeskpanel "$DATA"; chmod 0750 "$DATA"
 if [[ -f "$CFG/tls.key" ]]; then chown root:rustdeskpanel "$CFG/tls.key"; chmod 0640 "$CFG/tls.key"; fi
 if [[ -f "$CFG/tls.crt" ]]; then chmod 0644 "$CFG/tls.crt"; fi
+if [[ -f /etc/systemd/system/rustdeskpanel.service ]]; then sed -i '/^NoNewPrivileges=true$/d' /etc/systemd/system/rustdeskpanel.service; fi
+printf '%s\n' 'rustdeskpanel ALL=(root) NOPASSWD: /usr/local/sbin/rustdeskpanel-launch-update' > /etc/sudoers.d/rustdeskpanel-update
+chmod 0440 /etc/sudoers.d/rustdeskpanel-update
+visudo -cf /etc/sudoers.d/rustdeskpanel-update >/dev/null
+systemctl daemon-reload
 systemctl restart rustdeskpanel.service
 echo "به‌روزرسانی به نسخه $(cat "$APP/VERSION") انجام شد؛ اطلاعات ورود، پایگاه‌داده و گواهی حفظ شدند."
