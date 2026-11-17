@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-VERSION='1.0.0'
+VERSION='3.1.0'
 HOST=os.getenv('PANEL_BIND','172.16.2.99'); PORT=int(os.getenv('PANEL_PORT','8765'))
 DATA=Path(os.getenv('PANEL_DATA','/var/lib/rustdeskpanel')); DB_PATH=DATA/'panel.sqlite3'
 STATUS=Path(os.getenv('PANEL_STATUS_FILE','/var/lib/mizyar-panel/status.json'))
@@ -53,7 +53,7 @@ def init_db():
         c.execute('INSERT OR IGNORE INTO settings VALUES(?,?)',('logo',''))
 
 class Handler(BaseHTTPRequestHandler):
-    server_version='RustDeskPanel/1'
+    server_version='RustDeskPanel/3'
     def log_message(self,*a): pass
     def send_json(self,obj,status=200,headers=None):
         b=json.dumps(obj,ensure_ascii=False).encode(); self.send_response(status); self.send_header('Content-Type','application/json; charset=utf-8'); self.send_header('Cache-Control','no-store'); self.send_header('Content-Length',str(len(b)))
@@ -245,9 +245,11 @@ class Handler(BaseHTTPRequestHandler):
         if p=='/api/admin/update/apply':
             if not self.require(admin=True):return
             try:
-                r=subprocess.run(['sudo','/usr/local/sbin/rustdeskpanel-update'],capture_output=True,text=True,timeout=180)
-                return self.send_json({'ok':r.returncode==0,'output':(r.stdout+'\n'+r.stderr)[-4000:]},200 if r.returncode==0 else 500)
-            except Exception as e:return self.send_json({'error':str(e)},500)
+                r=subprocess.run(['sudo','-n','/usr/local/sbin/rustdeskpanel-launch-update'],capture_output=True,text=True,timeout=15)
+                output=(r.stdout+'\n'+r.stderr).strip()[-4000:]
+                if r.returncode: return self.send_json({'ok':False,'error':output or 'اجرای سرویس به‌روزرسانی مجاز نشد'},500)
+                return self.send_json({'ok':True,'output':'درخواست به‌روزرسانی در پس‌زمینه اجرا شد. چند لحظه صبر کن و صفحه را تازه‌سازی کن.'})
+            except Exception as e:return self.send_json({'ok':False,'error':str(e)},500)
         return self.send_error(404)
 
 def main():
